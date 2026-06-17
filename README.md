@@ -105,21 +105,21 @@ prep -design picorv32a
 run_synthesis
 ```
 
-![OpenLANE launch, prep and synthesis](images/1_syn1.png)
+![OpenLANE launch, prep and synthesis](images/01_syn1.png)
 
 ### Synthesis Report — Cell Count
 
 After synthesis we open the report to check the total number 
 of cells in the design — **15762 cells** in total.
 
-![Total cell count](images/2_syn2.png)
+![Total cell count](images/02_syn2.png)
 
 ### Synthesis Report — Flip Flop Count
 
 From the same report we identify the DFF count — **1613 flip flops** 
 used in the design.
 
-![DFF count](images/3_syn3.png)
+![DFF count](images/03_syn3.png)
 
 ### Flop Ratio Calculation
 Flop Ratio = 1613 / 15762 = 10.23%
@@ -245,10 +245,9 @@ runs/RUN_2026.06.17_18.05.17/results/floorplan/picorv32a.def
 ```
 
 ![Floorplan terminal — steps 1 to 6](images/04_floorplan1.png )
-*Terminal showing run_synthesis and run_floorplan completing steps 1–6,
 
 ![DEF file — die area and row definitions](images/05_floorplan2.png)
-*picorv32a floorplan DEF file — DIEAREA and standard cell ROW definitions*
+picorv32a floorplan DEF file — DIEAREA and standard cell ROW definitions
 
 
 ### Floorplan in Magic
@@ -260,10 +259,10 @@ magic -T /home/vscode/.ciel/ciel/sky130/versions/0fe599b2afb6708d281543108caf831
 ```
 
 ![picorv32a floorplan in Magic](images/06_floorplan3.png)
-*picorv32a floorplan in Magic — purple/pink = pwell, cyan lines = standard cell rows, IO pins on all 4 edges*
+picorv32a floorplan in Magic — purple/pink = pwell, cyan lines = standard cell rows, IO pins on all 4 edges
 
 ![Zoomed floorplan in Magic — IO pins and tap cells](images/07_floorplan4.png)
-*Zoomed Magic view showing IO pin locations and tap cell rows along the floorplan edge**
+
 
 
 ---
@@ -277,14 +276,16 @@ run_placement
 ```
 
 ![OpenLANE terminal — placement flow](images/08_placement1.png)
-*Terminal showing all placement steps completing successfully for picorv32a*
+Terminal showing all placement steps completing successfully for picorv32a
 
 ### Placement in Magic
 
 ```bash
+
+cd /home/vscode/Desktop/OpenLane/designs/picorv32a/runs/RUN_2026.06.17_18.05.17/results/placement/
 magic -T /home/vscode/.ciel/ciel/sky130/versions/0fe599b2afb6708d281543108caf8310912f54af/sky130A/libs.tech/magic/sky130A.tech \
-  lef read /home/vscode/Desktop/OpenLane/designs/picorv32a/runs/RUN_2026.06.17_18.05.17/tmp/merged.nom.lef \
-  def read /home/vscode/Desktop/OpenLane/designs/picorv32a/runs/RUN_2026.06.17_18.05.17/results/placement/picorv32a.def &
+  lef read ../../tmp/merged.nom.lef \
+  def read picorv32a.def &
 ```
 
 **Global placement view** — all standard cells are placed inside the core. The dense dark regions are clusters of logic cells.
@@ -296,6 +297,6 @@ magic -T /home/vscode/.ciel/ciel/sky130/versions/0fe599b2afb6708d281543108caf831
 **Zoomed-in view** — individual `sky130_fd_sc_hd_*` standard cells are visible. The horizontal striped bands are the **VPWR** and **VGND** power rails running across each cell row.
 
 ![Zoomed placement view — standard cells and power rails](images/10_placement3.png)
-*Zoomed Magic view — sky130 HD standard cells in rows with VPWR/VGND power rails visible*
+
 
 
