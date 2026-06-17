@@ -233,9 +233,9 @@ The actual threshold values depend on the PDK and the cell being characterised.
 
 ```bash
 run_floorplan
-```
 cd results/floorplan/
 less picorv32a.def
+```
 
 ### Floorplan DEF File
 
@@ -243,8 +243,6 @@ The output DEF file is at:
 ```
 runs/RUN_2026.06.17_18.05.17/results/floorplan/picorv32a.def
 ```
-
-Rows alternate **N** and **FS** (flipped) so adjacent rows share VDD/VSS rails.
 
 ![Floorplan terminal — steps 1 to 6](images/04_floorplan1.png )
 *Terminal showing run_synthesis and run_floorplan completing steps 1–6,
