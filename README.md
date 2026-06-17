@@ -273,14 +273,12 @@ Key values extracted:
 
 Rows alternate **N** and **FS** (flipped) so adjacent rows share VDD/VSS rails.
 
-![DEF file — die area and row definitions](screenshots/6_floorplan3.png)
-*picorv32a floorplan DEF file — DIEAREA and standard cell ROW definitions*
-
 ![Floorplan terminal — steps 1 to 6](screenshots/4_floorplan1.png)
 *Terminal showing run_synthesis and run_floorplan completing steps 1–6, run folder RUN_2026.06.16_19.12.45*
 
-![Zoomed floorplan in Magic — IO pins and tap cells](screenshots/7_floorplan4.png)
-*Zoomed Magic view showing IO pin locations and tap cell rows along the floorplan edge**
+![DEF file — die area and row definitions](5_floorplan2.png)
+*picorv32a floorplan DEF file — DIEAREA and standard cell ROW definitions*
+
 
 ### Floorplan in Magic
 
@@ -290,8 +288,12 @@ magic -T /home/vscode/.ciel/ciel/sky130/versions/0fe599b2afb6708d281543108caf831
   def read picorv32a.def &
 ```
 
-![picorv32a floorplan in Magic](screenshots/5_floorplan2.png)
+![picorv32a floorplan in Magic](screenshots/6_floorplan3.png)
 *picorv32a floorplan in Magic — purple/pink = pwell, cyan lines = standard cell rows, IO pins on all 4 edges*
+
+![Zoomed floorplan in Magic — IO pins and tap cells](7_floorplan4.png)
+*Zoomed Magic view showing IO pin locations and tap cell rows along the floorplan edge**
+
 
 ---
 
@@ -313,28 +315,19 @@ OpenLANE runs these steps automatically:
 | 10 | Detailed Placement |
 | 11 | Single-Corner STA (post-detailed placement) |
 
-![OpenLANE terminal — placement flow](screenshots/8_floorplan5.png)
+![OpenLANE terminal — placement flow](8_placement1.png)
 *Terminal showing all placement steps completing successfully for picorv32a*
 
 ### Placement in Magic
 
 **Global placement view** — all standard cells are placed inside the core. The dense dark regions are clusters of logic cells.
 
-![picorv32a global placement in Magic](screenshots/9_floorplan6.png)
+![picorv32a global placement in Magic](9_placement2.png)
 *picorv32a after global placement — standard cells distributed across the core*
 
 **Zoomed-in view** — individual `sky130_fd_sc_hd_*` standard cells are visible. The horizontal striped bands are the **VPWR** and **VGND** power rails running across each cell row.
 
-![Zoomed placement view — standard cells and power rails](screenshots/10_floorplan7.png)
+![Zoomed placement view — standard cells and power rails](10_placement3.png)
 *Zoomed Magic view — sky130 HD standard cells in rows with VPWR/VGND power rails visible*
-
-Useful Magic commands:
-```tcl
-press V        # zoom to fit
-press S        # select object
-what           # query selected object
-```
-
----
 
 
