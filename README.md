@@ -126,3 +126,215 @@ Flop Ratio = 1613 / 15762 = 10.23%
 
 10% of the total cells are flip flops — healthy for a 
 processor design like PicoRV32.
+
+# Day 2 — Good FloorPlan vs Bad FloorPlan and Introduction to Library Cells
+
+---
+
+## 1. Chip Floorplanning
+
+Floorplanning is the first step after synthesis. It decides the size and shape of the chip, where IO pins go, and where big blocks (like memories) are placed.
+
+Two key parameters:
+- **Utilisation Factor** = Area used by cells / Total core area. Typical value: 0.5–0.6 (leave room for routing and buffers)
+- **Aspect Ratio** = Height / Width. A value of 1 means a square chip.
+
+---
+
+## 2. Pre-Placed Cells and Decoupling Capacitors
+
+**Pre-placed cells** are large blocks (memories, PLLs, IPs) that are placed manually before the tool runs. The tool won't move them.
+
+**Decoupling capacitors (DECAPs)** are placed around these blocks. When many gates switch at once, they need a lot of current instantly. DECAPs act like local batteries — they supply that current and prevent the voltage from dropping, which could cause logic errors.
+
+---
+
+## 3. Power Planning
+
+Power is delivered using a **power mesh** — a grid of VDD and VSS wires on upper metal layers covering the whole chip. This ensures every cell gets power from nearby, reducing **IR drop** (voltage loss due to wire resistance) and **electromigration** (wire damage from high current).
+
+---
+
+## 4. Pin Placement and Cell Blockage
+
+IO pins are placed along the chip edges. Pins are placed close to the logic they connect to, so wires stay short.
+
+The area between the core and the die edge is blocked — called a **logical cell blockage** — so the placer doesn't put standard cells there. That space is reserved for IO buffers and ESD cells.
+
+---
+
+## 5. Library Binding and Placement
+
+Each gate in the netlist is mapped to a real physical cell from the library. The library has cells of different sizes and speeds for the same logic function.
+
+- **Initial placement** puts cells inside the core, trying to keep connected cells close together.
+- **Placement optimisation** checks wire lengths. If a wire is too long and signal quality drops, **buffers (repeaters)** are inserted to fix it.
+
+---
+
+## 6. Cell Design Flow
+
+Every standard cell is created through this flow:
+
+**Inputs** → PDK (DRC/LVS rules, SPICE models, design rules)
+
+**Design Steps:**
+- **Circuit design** — size the transistors to meet speed and drive strength targets
+- **Layout design** — draw the physical layout using Euler's path + stick diagram to minimise diffusion breaks
+- **Characterisation** — simulate the cell to extract timing, power, and noise data
+
+**Outputs** → CDL netlist, GDSII, LEF, extracted SPICE (.cir), timing/power/noise `.lib` files
+
+Cells come in different flavours: different functions (AND, OR, buffer, DFF...) and different threshold voltages (hvt, svt, lvt) to trade off speed vs power.
+
+---
+
+## 7. Characterization Flow
+
+The **GUNA** tool takes 8 inputs and generates the `.lib` models used in STA:
+
+1. NMOS and PMOS SPICE models
+2. Extracted cell subcircuit (`.sub` file)
+3. Testbench — two cascaded inverters with a 10f load cap
+4. Cell subcircuit (PMOS: W=0.9u/L=0.18u, NMOS: W=0.36u/L=0.18u)
+5. Power supply (VDD = 1.8V)
+6. Input pulse stimulus
+7. Output load capacitance
+8. Transient simulation command (`.tran 10e-12 4e-09`)
+
+GUNA outputs four model types: **Timing**, **Noise**, **Power**, and **Function** — all stored as `.lib` files used by STA and PD tools.
+
+---
+
+## 8. Timing Characterization
+
+Timing is measured using 8 voltage threshold variables defined in the `.lib` file:
+
+- `slew_low_rise_thr`, `slew_high_rise_thr` — low and high thresholds for rise slew
+- `slew_low_fall_thr`, `slew_high_fall_thr` — low and high thresholds for fall slew
+- `in_rise_thr`, `in_fall_thr` — input thresholds for delay measurement
+- `out_rise_thr`, `out_fall_thr` — output thresholds for delay measurement
+
+The actual threshold values depend on the PDK and the cell being characterised.
+
+**Propagation delay** = `time(out_*_thr) − time(in_*_thr)`
+- A well-chosen threshold gives a small positive delay
+- A bad threshold choice or too large an output load can give a negative delay — this is incorrect and must be avoided
+
+**Transition time (slew):**
+- Rise slew = `time(slew_high_rise_thr) − time(slew_low_rise_thr)`
+- Fall slew = `time(slew_high_fall_thr) − time(slew_low_fall_thr)`
+
+---
+
+## 9. Lab — Floorplan
+
+### Running Floorplan
+
+```bash
+run_floorplan
+```
+
+Key configuration variables:
+
+| Variable | Purpose |
+|----------|---------|
+| `FP_CORE_UTIL` | Core utilisation % |
+| `FP_ASPECT_RATIO` | Core shape |
+| `FP_IO_HMETAL` | Metal layer for horizontal IO pins |
+| `FP_IO_VMETAL` | Metal layer for vertical IO pins |
+
+OpenLANE runs these steps automatically:
+
+| Step | Action |
+|------|--------|
+| 3 | Initial Floorplanning → width 1267.76 µm, height 1267.52 µm |
+| 4 | IO Placement |
+| 5 | Tap/Decap Insertion |
+| 6 | PDN Generation (VPWR / VGND) |
+
+**Run folder:** `runs/RUN_2026.06.17_18.05.17/`
+
+### Floorplan DEF File
+
+The output DEF file is at:
+```
+runs/RUN_2026.06.17_18.05.17/results/floorplan/picorv32a.def
+```
+
+Key values extracted:
+
+| Parameter | Value |
+|-----------|-------|
+| Units | 1000 DB units = 1 µm |
+| Die area | (0,0) to (1279175, 1289895) |
+| Die width | **1279.175 µm** |
+| Die height | **1289.895 µm** |
+
+Rows alternate **N** and **FS** (flipped) so adjacent rows share VDD/VSS rails.
+
+![DEF file — die area and row definitions](screenshots/6_floorplan3.png)
+*picorv32a floorplan DEF file — DIEAREA and standard cell ROW definitions*
+
+![Floorplan terminal — steps 1 to 6](screenshots/4_floorplan1.png)
+*Terminal showing run_synthesis and run_floorplan completing steps 1–6, run folder RUN_2026.06.16_19.12.45*
+
+![Zoomed floorplan in Magic — IO pins and tap cells](screenshots/7_floorplan4.png)
+*Zoomed Magic view showing IO pin locations and tap cell rows along the floorplan edge**
+
+### Floorplan in Magic
+
+```bash
+magic -T /home/vscode/.ciel/ciel/sky130/versions/0fe599b2afb6708d281543108caf8310912f54af/sky130A/libs.tech/magic/sky130A.tech \
+  lef read ../../tmp/merged.nom.lef \
+  def read picorv32a.def &
+```
+
+![picorv32a floorplan in Magic](screenshots/5_floorplan2.png)
+*picorv32a floorplan in Magic — purple/pink = pwell, cyan lines = standard cell rows, IO pins on all 4 edges*
+
+---
+
+## 10. Lab — Placement
+
+### Running Placement
+
+```bash
+run_placement
+```
+
+OpenLANE runs these steps automatically:
+
+| Step | Action |
+|------|--------|
+| 7 | Global Placement |
+| 8 | Single-Corner STA (post-global placement) |
+| 9 | Placement Resizer + Design Optimizations |
+| 10 | Detailed Placement |
+| 11 | Single-Corner STA (post-detailed placement) |
+
+![OpenLANE terminal — placement flow](screenshots/8_floorplan5.png)
+*Terminal showing all placement steps completing successfully for picorv32a*
+
+### Placement in Magic
+
+**Global placement view** — all standard cells are placed inside the core. The dense dark regions are clusters of logic cells.
+
+![picorv32a global placement in Magic](screenshots/9_floorplan6.png)
+*picorv32a after global placement — standard cells distributed across the core*
+
+**Zoomed-in view** — individual `sky130_fd_sc_hd_*` standard cells are visible. The horizontal striped bands are the **VPWR** and **VGND** power rails running across each cell row.
+
+![Zoomed placement view — standard cells and power rails](screenshots/10_floorplan7.png)
+*Zoomed Magic view — sky130 HD standard cells in rows with VPWR/VGND power rails visible*
+
+Useful Magic commands:
+```tcl
+press V        # zoom to fit
+press S        # select object
+what           # query selected object
+```
+
+---
+
+
