@@ -105,7 +105,7 @@ prep -design picorv32a
 run_synthesis
 ```
 
-![OpenLANE launch, prep and synthesis](images/01_syn1.png)
+![Total cell count](images/01_syn1.png)
 
 ### Synthesis Report — Cell Count
 
