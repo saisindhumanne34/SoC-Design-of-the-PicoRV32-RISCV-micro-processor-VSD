@@ -234,26 +234,8 @@ The actual threshold values depend on the PDK and the cell being characterised.
 ```bash
 run_floorplan
 ```
-
-Key configuration variables:
-
-| Variable | Purpose |
-|----------|---------|
-| `FP_CORE_UTIL` | Core utilisation % |
-| `FP_ASPECT_RATIO` | Core shape |
-| `FP_IO_HMETAL` | Metal layer for horizontal IO pins |
-| `FP_IO_VMETAL` | Metal layer for vertical IO pins |
-
-OpenLANE runs these steps automatically:
-
-| Step | Action |
-|------|--------|
-| 3 | Initial Floorplanning → width 1267.76 µm, height 1267.52 µm |
-| 4 | IO Placement |
-| 5 | Tap/Decap Insertion |
-| 6 | PDN Generation (VPWR / VGND) |
-
-**Run folder:** `runs/RUN_2026.06.17_18.05.17/`
+cd results/floorplan/
+less picorv32a.def
 
 ### Floorplan DEF File
 
@@ -262,19 +244,10 @@ The output DEF file is at:
 runs/RUN_2026.06.17_18.05.17/results/floorplan/picorv32a.def
 ```
 
-Key values extracted:
-
-| Parameter | Value |
-|-----------|-------|
-| Units | 1000 DB units = 1 µm |
-| Die area | (0,0) to (1279175, 1289895) |
-| Die width | **1279.175 µm** |
-| Die height | **1289.895 µm** |
-
 Rows alternate **N** and **FS** (flipped) so adjacent rows share VDD/VSS rails.
 
 ![Floorplan terminal — steps 1 to 6](images/04_floorplan1.png )
-*Terminal showing run_synthesis and run_floorplan completing steps 1–6, run folder RUN_2026.06.16_19.12.45*
+*Terminal showing run_synthesis and run_floorplan completing steps 1–6,
 
 ![DEF file — die area and row definitions](images/05_floorplan2.png)
 *picorv32a floorplan DEF file — DIEAREA and standard cell ROW definitions*
@@ -305,22 +278,19 @@ magic -T /home/vscode/.ciel/ciel/sky130/versions/0fe599b2afb6708d281543108caf831
 run_placement
 ```
 
-OpenLANE runs these steps automatically:
-
-| Step | Action |
-|------|--------|
-| 7 | Global Placement |
-| 8 | Single-Corner STA (post-global placement) |
-| 9 | Placement Resizer + Design Optimizations |
-| 10 | Detailed Placement |
-| 11 | Single-Corner STA (post-detailed placement) |
-
 ![OpenLANE terminal — placement flow](images/08_placement1.png)
 *Terminal showing all placement steps completing successfully for picorv32a*
 
 ### Placement in Magic
 
+```bash
+magic -T /home/vscode/.ciel/ciel/sky130/versions/0fe599b2afb6708d281543108caf8310912f54af/sky130A/libs.tech/magic/sky130A.tech \
+  lef read /home/vscode/Desktop/OpenLane/designs/picorv32a/runs/RUN_2026.06.17_18.05.17/tmp/merged.nom.lef \
+  def read /home/vscode/Desktop/OpenLane/designs/picorv32a/runs/RUN_2026.06.17_18.05.17/results/placement/picorv32a.def &
+```
+
 **Global placement view** — all standard cells are placed inside the core. The dense dark regions are clusters of logic cells.
+
 
 ![picorv32a global placement in Magic](images/09_placement2.png)
 *picorv32a after global placement — standard cells distributed across the core*
