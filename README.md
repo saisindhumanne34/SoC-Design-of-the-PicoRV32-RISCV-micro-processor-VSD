@@ -356,11 +356,11 @@ magic -T sky130A.tech sky130_inv.mag &
 
 Inspected the cell: stacked PMOS/NMOS pair, VPWR/VGND rails, and A (input) / Y (output) ports.
 
-(images/11_inv.png)
-(images/12_inv2.png)
-(images/13_inv3.png)
-(images/14_inv4.png)
-(images/15_inv5.png)
+![description](images/11_inv.png)
+![description](images/12_inv2.png)
+![description](images/13_inv3.png)
+![description](images/14_inv4.png)
+![description](images/15_inv5.png)
 
 ## Extracting SPICE Netlist from Magic
 
