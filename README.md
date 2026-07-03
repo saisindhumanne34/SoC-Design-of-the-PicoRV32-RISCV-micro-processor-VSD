@@ -395,9 +395,9 @@ Fall transition time = Time taken for output to fall to 20% − Time taken for o
 Propagation delay measured at the input/output 50% crossover, around **t ≈ 2.18 ns**.
 
 ![Zoomed crossover - 2.56-2.72V range](images/22_inv11.png)
-![Zoomed crossover - 610-710mV range](images/21_inv11.png)
-![Zoomed crossover - 665.4-667.4mV range](images/20_inv10.png)
 ![Delay measurement values from ngspice cursor](images/19_inv9.png)
+![Zoomed crossover - 665.4-667.4mV range](images/20_inv10.png)
+![Zoomed crossover - 610-710mV range](images/21_inv11.png)
 
 ## Magic DRC Lab
 
