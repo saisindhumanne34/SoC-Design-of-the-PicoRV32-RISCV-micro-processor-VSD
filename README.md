@@ -633,13 +633,7 @@ Zoomed view of a standard cell row showing fillers, decap cells, and antenna dio
 
 ![Standard cell row - fillers, decaps, and antenna cells](images/50_day5.png)
 
-### Common Violations to Watch For
 
-- **Min spacing violations** — two wires sitting too close together on the same layer
-- **Antenna violations** — a long metal segment can accumulate charge during the etch step before the transistor above it is even connected, and that charge can punch through and damage the gate oxide
-  - **Fix:** insert antenna diodes to bleed off the charge, or route a jumper via up to a higher layer to break the exposed segment
-
----
 
 ## Tools & Environment
 
@@ -677,4 +671,4 @@ Credit where it's due: Kunal Ghosh for running VSD and designing this program, N
 - [vsdstdcelldesign](https://github.com/nickson-jose/vsdstdcelldesign) — Nickson Jose's repo for the custom cell lab
 
 ---
-*Part of the [SoC Design of the PicoRV32 RISC-V micro-processor - VSD](https://github.com/saisindhumanne34/SoC-Design-of-the-PicoRV32-RISCV-micro-processor-VSD) workshop series.*
+
