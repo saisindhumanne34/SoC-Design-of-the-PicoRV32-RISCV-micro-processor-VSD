@@ -408,6 +408,7 @@ Reference: [Sky130 Periphery Rules](https://skywater-pdk.readthedocs.io/en/main/
 **Met3:** worked through a similar labeled test grid (`m3.1`–`m3.6`) for the met3 layer, again split into correct-by-design, incorrect, and not-implemented examples.
 
 ![met3 test structures - m3.1 to m3.6](images/24_sky2.png)
+![poly cell zoomed - ppolyres layer, DRC=22](images/25_sky3.png)
 
 **Poly rule (poly.9):** found a case where poly.9 was incorrectly implemented in the old sky130A tech file — spacing under 0.48µm wasn't flagging a DRC violation at all. Traced this to the rule definition in the tech file itself and corrected it so the spacing check actually fires.
 
@@ -443,7 +444,6 @@ Worked through `poly.1a`–`poly.16`, each labeled Correct by design / Incorrect
 
 ![poly.1a to poly.16 test structures](images/26_sky4.png)
 ![poly.7-poly.11 structures with xhrpoly/uhrpoly drc why output](images/28_sky6.png)
-![poly cell zoomed - ppolyres layer, DRC=22](images/25_sky3.png)
 
 # Day 4 — Pre-Layout Timing Analysis and Clock Tree Synthesis
 
