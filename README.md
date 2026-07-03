@@ -298,5 +298,149 @@ magic -T /home/vscode/.ciel/ciel/sky130/versions/0fe599b2afb6708d281543108caf831
 
 ![Zoomed placement view — standard cells and power rails](images/10_placement3.png)
 
+# Day 3 — Design and Characterisation of Library Cells using Magic & ngspice
+
+## CMOS Inverter — SPICE Deck
+
+To characterise a standard cell, we write a SPICE netlist describing the PMOS and NMOS transistors along with their W/L ratios, supply voltage, input stimulus, and load capacitance.
+
+```
+M1 out in vdd vdd pmos W=0.375u L=0.25u
+M2 out in 0 0 nmos W=0.375u L=0.25u
+cload out 0 10f
+Vdd vdd 0 2.5
+Vin in 0 2.5
+.op
+.dc Vin 0 2.5 0.05
+.LIB "tsmc_025um_model.mod" CMOS_MODELS
+.end
+```
+
+Key parameters extracted from simulation:
+
+- **Rise time** — output rising edge, 20% → 80%
+- **Fall time** — output falling edge, 80% → 20%
+- **Propagation delay** — 50% input → 50% output
+
+Also characterised the switching threshold **Vm** (where Vout = Vin). With Wn = Wp = 0.375µm, Vm ≈ 0.98V — the NMOS pulls down harder since electron mobility beats hole mobility. Widening the PMOS to ~2.5× the NMOS width (0.9375µm) brings Vm closer to the ideal VDD/2, landing at ≈1.2V on a 2.5V supply. This is also why PMOS is drawn wider than NMOS in real standard cell libraries — a skewed Vm means asymmetric noise margins.
+
+## 16-Mask CMOS Fabrication Process (Brief Overview)
+
+Chip fabrication follows a sequence of about 16 mask steps. Steps 1–10 build the transistors themselves (front-end), and steps 11–16 wire them together with interconnect (back-end).
+
+1. Substrate selection (p-type, high resistivity)
+2. Active region formation (isolation via LOCOS/STI, field oxidation + Si3N4 mask)
+3. N-well formation (ion implantation)
+4. P-well formation (ion implantation)
+5. Gate oxide growth
+6. Polysilicon gate deposition and patterning
+7. Lightly Doped Drain (LDD) formation
+8. Sidewall spacer formation
+9. N+ source/drain implantation (with halo implants)
+10. P+ source/drain implantation (with halo implants)
+11. Local interconnect / silicidation
+12. Contact formation
+13. Metal 1 deposition and patterning
+14. Via formation
+15. Higher-level metal formation (Metal 2 and above)
+16. Final passivation
+
+## Lab — Cloning and Characterising a Custom Inverter Cell
+
+Cloned the standard cell repository and opened the inverter layout in Magic:
+
+```bash
+git clone https://github.com/nickson-jose/vsdstdcelldesign.git
+magic -T sky130A.tech sky130_inv.mag &
+```
+
+Inspected the cell: stacked PMOS/NMOS pair, VPWR/VGND rails, and A (input) / Y (output) ports.
+
+![sky130_inv layout in Magic](images/day3/11_inv.png)
+![sky130_inv layout in Magic](images/day3/12_inv2.png)
+![sky130_inv layout in Magic](images/day3/13_inv3.png)
+![sky130_inv layout in Magic](images/day3/14_inv4.png)
+![sky130_inv layout in Magic](images/day3/15_inv5.png)
+
+## Extracting SPICE Netlist from Magic
+
+From the tkcon console:
+
+```tcl
+extract all
+ext2spice cthresh 0 rthresh 0
+ext2spice
+```
+
+This produces `sky130_inv.spice` — a netlist built straight from the drawn layout geometry rather than hand-written. Edited the generated file to check the model include path and unit distances before simulating.
+
+![sky130_inv layout in Magic](images/day3/inv_layout.png)
+
+## Running ngspice Simulation
+
+```bash
+ngspice sky130_inv.spice
+```
+```
+plot y vs time a
+```
+
+![ngspice transient waveform - output vs input](images/day3/ngspice_waveform.png)
+
+From the waveform, measured rise time, fall time, and propagation delay:
+
+**Rise transition time** = time to reach 80% − time to reach 20%
+- 20% of output = 660 mV
+- 80% of output = 2.64 V
+
+**Fall transition time** = time to fall to 20% − time to fall to 80%
+- 20% of output = 660 mV
+- 80% of output = 2.64 V
+
+Propagation delay measured at the input/output 50% crossover, around **t ≈ 2.18 ns**.
+
+![Zoomed-in crossover point for delay measurement](images/day3/ngspice_delay_zoom.png)
+
+## Magic DRC Lab
+
+Reference: [Sky130 Periphery Rules](https://skywater-pdk.readthedocs.io/en/main/rules/periphery.html)
+
+**Poly rule (poly.9):** found a case where poly.9 was incorrectly implemented in the old sky130A tech file — spacing under 0.48µm wasn't flagging a DRC violation at all. Traced this to the rule definition in the tech file itself and corrected it so the spacing check actually fires.
+
+![poly.9 rule before correction - no violation flagged](images/day3/poly9_before.png)
+
+**N-well:**
+```tcl
+% drc why
+N-well width < 0.84um (nwell.1)
+N-well spacing < 1.27um (nwell.2a)
+N-well overlap of Deep N-well < 0.4um outside, 1.03um inside (nwell.5a, 7)
+```
+Fixed the geometry — follow-up `drc why` returned "No errors found."
+
+![N-well DRC violations and corrected cell](images/day3/nwell_drc.png)
+
+**Diffusion tap (difftap):** worked through `difftap.1`–`difftap.6`, comparing incorrect examples against corrected versions in the same layout.
+
+![difftap correct vs incorrect examples](images/day3/difftap_examples.png)
+
+**Poly / precision resistor:**
+```tcl
+% drc why
+mrp1 resistor width < 0.33um (poly.3)
+xhrpoly/uhrpoly resistor spacing to diffusion < 0.48um (poly.9)
+poly.resistor spacing to N-tap < 0.48um (poly.9)
+poly.spacing to Diffusion < 0.075um (poly.4a)
+P-tap spacing to field poly < 0.055um (poly.5)
+```
+Worked through `poly.1a`–`poly.16`, each labeled Correct by design / Incorrect / Not implemented.
+
+![poly.1a to poly.16 test structures](images/day3/poly_test_structures.png)
+
+*Note: a cosmetic grey-crosshatch rendering issue in this Codespaces + noVNC setup doesn't affect DRC accuracy.*
+
+---
+*Part of the [SoC Design of the PicoRV32 RISC-V micro-processor - VSD](https://github.com/saisindhumanne34/SoC-Design-of-the-PicoRV32-RISCV-micro-processor-VSD) workshop series.*
+
 
 
