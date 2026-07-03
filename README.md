@@ -298,23 +298,12 @@ magic -T /home/vscode/.ciel/ciel/sky130/versions/0fe599b2afb6708d281543108caf831
 
 ![Zoomed placement view — standard cells and power rails](images/10_placement3.png)
 
+
 # Day 3 — Design and Characterisation of Library Cells using Magic & ngspice
 
 ## CMOS Inverter — SPICE Deck
 
 To characterise a standard cell, we write a SPICE netlist describing the PMOS and NMOS transistors along with their W/L ratios, supply voltage, input stimulus, and load capacitance.
-
-```
-M1 out in vdd vdd pmos W=0.375u L=0.25u
-M2 out in 0 0 nmos W=0.375u L=0.25u
-cload out 0 10f
-Vdd vdd 0 2.5
-Vin in 0 2.5
-.op
-.dc Vin 0 2.5 0.05
-.LIB "tsmc_025um_model.mod" CMOS_MODELS
-.end
-```
 
 Key parameters extracted from simulation:
 
@@ -356,11 +345,12 @@ magic -T sky130A.tech sky130_inv.mag &
 
 Inspected the cell: stacked PMOS/NMOS pair, VPWR/VGND rails, and A (input) / Y (output) ports.
 
-![description](images/11_inv.png)
-![description](images/12_inv2.png)
-![description](images/13_inv3.png)
-![description](images/14_inv4.png)
-![description](images/15_inv5.png)
+![sky130_inv layout - full cell view](images/11_inv.png)
+![sky130_inv layout - pmos layer selected](images/12_inv2.png)
+![sky130_inv layout - nmos layer selected](images/13_inv3.png)
+![sky130_inv layout - with DRC layer legend](images/14_inv4.png)
+![sky130_inv layout - with routing layer legend](images/15_inv5.png)
+![met3 layer legend view](images/24_sky2.png)
 
 ## Extracting SPICE Netlist from Magic
 
@@ -372,7 +362,8 @@ ext2spice cthresh 0 rthresh 0
 ext2spice
 ```
 Measuring unit distance in layout grid
-![description](images/16_inv6.png)
+
+![Extracted SPICE file - tkcon console showing extract/ext2spice commands](images/16_inv6.png)
 
 ## Running ngspice Simulation
 
@@ -382,43 +373,41 @@ ngspice sky130_inv.spice
 ```
 plot y vs time a
 ```
-generated plot
-![description](images/17_inv7.png)
-![description](images/18_inv8.png)
-![description](images/20_inv10.png)
-![description](images/21_inv11.png)
-![description](images/22_inv11.png)
-![description](images/23_sky1.png)
-![description](images/24_sky2.png)
-![description](images/25_sky3.png)
-![description](images/26_sky4.png)
-![description](images/27_sky5.png)
-![description](images/28_sky6.png)
-![description](images/29_sky7.png)
-![description](images/30_sky8.png)
-![description](images/31_sky9.png)
-![description](images/32_sky10.png)
-From the waveform, measured rise time, fall time, and propagation delay:
 
-**Rise transition time** = time to reach 80% − time to reach 20%
+![ngspice terminal output - node voltages](images/18_inv8.png)
+
+![ngspice transient waveform - output vs input](images/17_inv7.png)
+
+From the waveform, measure rise time, fall time, and propagation delay values.
+
+**Rise transition time calculation**
+
+Rise transition time = Time taken for output to rise to 80% − Time taken for output to rise to 20%
 - 20% of output = 660 mV
 - 80% of output = 2.64 V
 
-**Fall transition time** = time to fall to 20% − time to fall to 80%
+**Fall transition time calculation**
+
+Fall transition time = Time taken for output to fall to 20% − Time taken for output to fall to 80%
 - 20% of output = 660 mV
 - 80% of output = 2.64 V
 
 Propagation delay measured at the input/output 50% crossover, around **t ≈ 2.18 ns**.
 
-![Zoomed-in crossover point for delay measurement](images/day3/ngspice_delay_zoom.png)
+![Zoomed crossover - 2.56-2.72V range](images/22_inv11.png)
+![Zoomed crossover - 610-710mV range](images/21_inv11.png)
+![Zoomed crossover - 665.4-667.4mV range](images/20_inv10.png)
+![Delay measurement values from ngspice cursor](images/19_inv9.png)
 
 ## Magic DRC Lab
 
 Reference: [Sky130 Periphery Rules](https://skywater-pdk.readthedocs.io/en/main/rules/periphery.html)
 
+![Sky130 PDK periphery rules documentation](images/23_sky1.png)
+
 **Poly rule (poly.9):** found a case where poly.9 was incorrectly implemented in the old sky130A tech file — spacing under 0.48µm wasn't flagging a DRC violation at all. Traced this to the rule definition in the tech file itself and corrected it so the spacing check actually fires.
 
-![poly.9 rule before correction - no violation flagged](images/day3/poly9_before.png)
+![poly.9 rule - drc why output showing mrp1/poly.9 violations](images/27_sky5.png)
 
 **N-well:**
 ```tcl
@@ -429,11 +418,13 @@ N-well overlap of Deep N-well < 0.4um outside, 1.03um inside (nwell.5a, 7)
 ```
 Fixed the geometry — follow-up `drc why` returned "No errors found."
 
-![N-well DRC violations and corrected cell](images/day3/nwell_drc.png)
+![N-well - drc why output showing width/spacing/overlap violations](images/30_sky8.png)
+![N-well - incorrect implementation flagged, DRC=24](images/29_sky7.png)
+![N-well - polysilicon zoomed view, DRC=11](images/31_sky9.png)
 
 **Diffusion tap (difftap):** worked through `difftap.1`–`difftap.6`, comparing incorrect examples against corrected versions in the same layout.
 
-![difftap correct vs incorrect examples](images/day3/difftap_examples.png)
+![difftap.1 to difftap.6 - correct vs incorrect, DRC=10](images/32_sky10.png)
 
 **Poly / precision resistor:**
 ```tcl
@@ -446,12 +437,8 @@ P-tap spacing to field poly < 0.055um (poly.5)
 ```
 Worked through `poly.1a`–`poly.16`, each labeled Correct by design / Incorrect / Not implemented.
 
-![poly.1a to poly.16 test structures](images/day3/poly_test_structures.png)
-
-*Note: a cosmetic grey-crosshatch rendering issue in this Codespaces + noVNC setup doesn't affect DRC accuracy.*
-
----
-*Part of the [SoC Design of the PicoRV32 RISC-V micro-processor - VSD](https://github.com/saisindhumanne34/SoC-Design-of-the-PicoRV32-RISCV-micro-processor-VSD) workshop series.*
+![poly.1a to poly.16 test structures](images/26_sky4.png)
+![poly.7-poly.11 structures with xhrpoly/uhrpoly drc why output](images/28_sky6.png)
 
 
 
