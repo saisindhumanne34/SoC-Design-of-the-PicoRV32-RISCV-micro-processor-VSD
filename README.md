@@ -564,12 +564,17 @@ Created `pre_sta.conf` in the OpenLane root, and `my_base.sdc` in `openlane/desi
 ```tcl
 sta pre_sta.conf
 ```
+![OpenLane flow.tcl -interactive - merging sky130_vsdinv.lef, run_synthesis](images/45_day4.png)
+![OpenLane flow.tcl -interactive - merging sky130_vsdinv.lef, run_synthesis](images/46_day4.png)
+![OpenLane flow.tcl -interactive - merging sky130_vsdinv.lef, run_synthesis](images/47_day4.png)
+
 
 ### Running CTS
 
 ```tcl
 run_cts
 ```
+![OpenLane flow.tcl -interactive - merging sky130_vsdinv.lef, run_synthesis](images/48_day4.png)
 
 Dropped into the OpenROAD tool directly to build a custom timing report, reading the post-CTS netlist, liberty files, and the custom SDC:
 ```tcl
