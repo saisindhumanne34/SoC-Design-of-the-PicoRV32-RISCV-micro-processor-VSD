@@ -585,4 +585,109 @@ read_sdc /OpenLane/designs/picorv32a/src/my_base.sdc
 set_propagated_clock [all_clocks]
 report_checks -path_delay min_max -fields {slew trans net cap input_pins} -format full_clock_expanded -digits 4
 ```
+# Day 5 — Final RTL to GDSII using TritonRoute & OpenSTA
 
+## Routing — Global vs Detailed
+
+Routing happens in two passes, each handing off to the next:
+
+- **Global routing (FastRoute)** — splits the chip into a grid of routing regions and works out a rough path for every net through that grid, staying aware of layer usage and congestion but not committing to exact wire geometry yet.
+- **Detailed routing (TritonRoute)** — takes those global routing guides and turns them into actual wire segments, vias, and track assignments, this time enforcing full DRC compliance.
+
+### How global routing finds a path
+
+At its core, global routing is a maze-search problem. The classic approach (Lee's algorithm, 1961) floods outward from the source cell in expanding rings, numbering each reachable grid cell by how many hops it took to get there, until the wave reaches the target. Backtracking from the target through decreasing numbers traces out a shortest path. FastRoute builds on this idea over a 3D grid, where each layer is broken into **global cells** (small regions of the chip) connected by **global edges** — and it's the capacity of those edges that global routing is really optimizing against, not individual wires yet.
+
+Before a net's topology is even decided, there's a separate optimization step: given a set of access points to connect, build a minimum spanning tree over the pairwise distances between them. That MST becomes the topology the router then tries to realize — it's what keeps total wirelength down before any actual routing happens.
+
+### How TritonRoute uses the guides it's handed
+
+TritonRoute doesn't route freely — it treats the global routing guides as a strong hint and tries to stay inside them wherever possible. Before routing starts, those raw guides get cleaned up into a usable form:
+
+- **Splitting** — breaking an oddly-shaped guide into unit-width, single-direction pieces
+- **Merging** — combining adjacent pieces that run the same direction
+- **Bridging** — adding short connecting segments where two guides on different layers need to overlap to actually connect
+
+The output has to satisfy two conditions: every guide is unit-width, and every guide runs in that layer's preferred direction (e.g. vertical on M1, horizontal on M2). Pin access itself works similarly — a routing track has to actually cross a pin shape before TritonRoute will treat it as reachable, whether that pin sits on the same layer as the guide or one layer below.
+
+Once guides are clean, TritonRoute works layer by layer using a panel-based scheme: each metal layer is split into panels, and it routes all panels on one layer in parallel before moving sequentially to the next layer up — intra-layer parallel, inter-layer sequential.
+
+## SPEF and Post-Route STA
+
+Once routing is done, the real resistance and capacitance of every wire can finally be extracted — these parasitics get written out to a SPEF (Standard Parasitic Exchange Format) file. That SPEF is back-annotated onto the netlist, and STA is re-run using the actual wire delays instead of estimates, giving the final sign-off timing numbers.
+
+---
+
+## Lab — Power Distribution, Routing
+
+### Power Planning
+
+Before routing, the power distribution network gets its own structure: a ring of VDD and GND running around the block boundary (the block power ring), with power stripes branching inward across the core to keep IR drop under control. Every standard cell row taps into this network through horizontal rail connections, so cell power pins never have to route far to reach a stripe. Macros like RAM blocks get their own local ring plus a halo — a keep-out margin around the macro that routing and placement both respect — and I/O pads sit on the outer padframe with their own power connections feeding in from the ring.
+
+Generated the power distribution network:
+```tcl
+gen_pdn
+```
+
+Ran detailed routing:
+```tcl
+run_routing
+```
+
+Full routed die view after PDN generation and routing:
+
+![Full routed chip - PDN and routing overview](images/49_day5.png)
+
+Zoomed view of top-level I/O pins (`pcpi_rd`, `irq`, `trap`, `pcpi_cs`, `mem_rdata`, `mem_la_wdata`) landing at the chip boundary, with standard cell rows and filler cells visible below:
+
+![Top-level I/O pin placement with standard cell rows](images/51_day5.png)
+
+Zoomed view of a standard cell row showing fillers, decap cells, and antenna diode cells (labeled `ANTENNA`) threaded in among the logic cells:
+
+![Standard cell row - fillers, decaps, and antenna cells](images/50_day5.png)
+
+### Common Violations to Watch For
+
+- **Min spacing violations** — two wires sitting too close together on the same layer
+- **Antenna violations** — a long metal segment can accumulate charge during the etch step before the transistor above it is even connected, and that charge can punch through and damage the gate oxide
+  - **Fix:** insert antenna diodes to bleed off the charge, or route a jumper via up to a higher layer to break the exposed segment
+
+---
+
+## Tools & Environment
+
+| Tool | Purpose |
+|---|---|
+| OpenLANE | RTL-to-GDSII automation flow |
+| Yosys | RTL synthesis |
+| OpenROAD | Floorplan, placement, CTS, routing |
+| Magic | Layout editor, DRC, LVS |
+| OpenSTA | Static timing analysis |
+| ngspice | SPICE simulation |
+| TritonRoute | Detailed routing |
+| Netgen | LVS (layout vs. schematic) |
+| Sky130 PDK | SkyWater 130nm open-source PDK |
+
+## Key Learnings
+
+- Watched a design actually move through every stage from RTL to a manufacturable GDSII file, entirely on open-source tooling
+- Built practical familiarity with floorplanning, placement, CTS, and routing by running them directly on the picorv32a core
+- Learned the full path for bringing a hand-built standard cell into a flow that otherwise only knows the stock library
+- Applied STA ideas that were abstract on paper — setup/hold slack, OCV, CRPR — by pulling real numbers out of OpenSTA
+- Compared pre-route and post-route timing side by side and saw firsthand how much extracted parasitics can shift a design's numbers
+
+## Acknowledgements
+
+This workshop was put together by Kunal Ghosh (Co-founder, VSD Corp. Pvt. Ltd.) and Nickson P Jose (Physical Design Engineer, Intel), and I'm genuinely grateful for how deliberately it was structured — every concept came paired with a lab that made it concrete. Getting an actual RISC-V core through the entire RTL-to-GDSII flow using only open-source tools felt like a stretch goal going in; coming out the other side with a routed, sign-off-timed chip was a good reminder of how far this toolchain has come.
+
+Credit where it's due: Kunal Ghosh for running VSD and designing this program, Nickson Jose for both his mentorship and the vsdstdcelldesign repo the Day 3 labs were built on, and NASSCOM for organizing and hosting the workshop.
+
+## References
+
+- [VSD SoC Design Workshop](https://www.vlsisystemdesign.com/digital-vlsi-soc-design-and-planning/) — course home page
+- [OpenLANE](https://github.com/The-OpenROAD-Project/OpenLane) — the RTL-to-GDSII flow used throughout
+- [SkyWater Sky130 PDK](https://github.com/google/skywater-pdk) — the open-source PDK this whole build targets
+- [vsdstdcelldesign](https://github.com/nickson-jose/vsdstdcelldesign) — Nickson Jose's repo for the custom cell lab
+
+---
+*Part of the [SoC Design of the PicoRV32 RISC-V micro-processor - VSD](https://github.com/saisindhumanne34/SoC-Design-of-the-PicoRV32-RISCV-micro-processor-VSD) workshop series.*
