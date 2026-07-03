@@ -350,7 +350,6 @@ Inspected the cell: stacked PMOS/NMOS pair, VPWR/VGND rails, and A (input) / Y (
 ![sky130_inv layout - nmos layer selected](images/13_inv3.png)
 ![sky130_inv layout - with DRC layer legend](images/14_inv4.png)
 ![sky130_inv layout - with routing layer legend](images/15_inv5.png)
-![met3 layer legend view](images/24_sky2.png)
 
 ## Extracting SPICE Netlist from Magic
 
@@ -361,8 +360,8 @@ extract all
 ext2spice cthresh 0 rthresh 0
 ext2spice
 ```
-
 Measuring unit distance in layout grid
+
 ![Extracted SPICE file - tkcon console showing extract/ext2spice commands](images/16_inv6.png)
 
 ## Running ngspice Simulation
@@ -375,6 +374,7 @@ plot y vs time a
 ```
 
 ![ngspice terminal output - node voltages](images/18_inv8.png)
+![ngspice terminal output - with plot commands and delay measurements](images/19_inv19.png)
 
 ![ngspice transient waveform - output vs input](images/17_inv7.png)
 
@@ -426,6 +426,10 @@ Fixed the geometry — follow-up `drc why` returned "No errors found."
 
 ![difftap.1 to difftap.6 - correct vs incorrect, DRC=10](images/32_sky10.png)
 
+**Met3:** worked through a similar labeled test grid (`m3.1`–`m3.6`) for the met3 layer, again split into correct-by-design, incorrect, and not-implemented examples.
+
+![met3 test structures - m3.1 to m3.6](images/24_sky2.png)
+
 **Poly / precision resistor:**
 ```tcl
 % drc why
@@ -440,6 +444,4 @@ Worked through `poly.1a`–`poly.16`, each labeled Correct by design / Incorrect
 ![poly.1a to poly.16 test structures](images/26_sky4.png)
 ![poly.7-poly.11 structures with xhrpoly/uhrpoly drc why output](images/28_sky6.png)
 ![poly cell zoomed - ppolyres layer, DRC=22](images/25_sky3.png)
-
-
 
