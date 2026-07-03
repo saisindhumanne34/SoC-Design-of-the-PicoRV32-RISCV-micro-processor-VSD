@@ -371,10 +371,8 @@ extract all
 ext2spice cthresh 0 rthresh 0
 ext2spice
 ```
-
+Measuring unit distance in layout grid
 ![description](images/16_inv6.png)
-
-![description](images/17_inv7.png)
 
 ## Running ngspice Simulation
 
@@ -384,7 +382,8 @@ ngspice sky130_inv.spice
 ```
 plot y vs time a
 ```
-
+generated plot
+![description](images/17_inv7.png)
 ![description](images/18_inv8.png)
 ![description](images/20_inv10.png)
 ![description](images/21_inv11.png)
