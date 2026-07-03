@@ -445,3 +445,144 @@ Worked through `poly.1a`–`poly.16`, each labeled Correct by design / Incorrect
 ![poly.7-poly.11 structures with xhrpoly/uhrpoly drc why output](images/28_sky6.png)
 ![poly cell zoomed - ppolyres layer, DRC=22](images/25_sky3.png)
 
+# Day 4 — Pre-Layout Timing Analysis and Clock Tree Synthesis
+
+## LEF Files and Guidelines for Standard Cell Ports
+
+A custom cell can't be dropped into OpenLANE without a LEF file describing its outline, pin positions, and metal geometry. Two placement rules matter most for the router to actually reach the pins:
+
+- Ports need to land exactly where a horizontal and vertical routing track cross
+- The cell's width and height each have to be an odd multiple of the corresponding track pitch
+
+## Clock Gating
+
+A simple technique to save power by cutting the clock to idle logic.
+
+**AND gate:** EN=1 → clock passes → circuit active. EN=0 → clock blocked → circuit sleeps → saves power.
+
+**OR gate:** EN=0 → clock passes → circuit active. EN=1 → output stuck at 1 → clock blocked → saves power.
+
+Either way: block the clock = save power.
+
+## Delay Tables
+
+Buffer delay isn't fixed — it depends on input slew (how fast the signal switches) and output load capacitance (how much is connected at the output). Rather than recalculating this every time, all combinations are pre-characterized into a 2D lookup table that the tool reads during CTS: rows for input slew, columns for output load, interpolating between the nearest values if the exact combination isn't in the table.
+
+## Static Timing Analysis (STA) Concepts
+
+A path passes setup checking when there's slack left over: **slack = (time data is required by) − (time data actually arrives)**, and that number has to stay non-negative.
+
+**Building up the setup condition:**
+- Start simple: the combinational delay θ just has to fit inside one clock period T → θ < T
+- A flop can't capture instantly — it needs a bit of settling time S before the edge, so the usable window shrinks: θ < T − S
+- Real clocks don't land at the exact same instant every cycle (jitter), so a margin SU gets carved out too: θ < T − S − SU
+
+**Two more variation sources STA has to absorb:**
+- **OCV** — die-to-die and even within-die process/voltage/temperature swings, handled by applying derating factors to path delays rather than assuming one fixed number everywhere
+- **CRPR** — when the launch and capture paths share a stretch of common clock buffering, that shared delay shouldn't be counted as extra pessimism on both sides; CRPR strips that double-count back out
+
+## Clock Tree Synthesis (CTS)
+
+After placement, flip-flops sit on the chip but the clock isn't connected yet. CTS builds the clock distribution network so it reaches every flop at the same time with minimum skew.
+
+**Without CTS:** connecting the clock directly from source to every flop means far-away flops get it later than nearby ones — that arrival-time difference is skew, and it causes timing violations.
+
+**H-Tree routing:** the tool finds the midpoint of all flip-flops and routes the clock in an H-shaped pattern, giving equal wire length — and therefore equal delay — from source to every flop.
+
+**Buffering:** long clock wires have enough resistance and capacitance to degrade the signal, so buffers are inserted along the clock path to keep transitions sharp.
+
+**Two things need a second look once CTS finishes:**
+- **Hold timing** — the buffers CTS just inserted add real, physical delay to clock paths that were previously treated as ideal (zero-delay), and that shift can open up hold violations that weren't visible before
+- **Setup timing** — worth re-running too, since the clock arrival times going into the setup calculation have changed from what was assumed pre-CTS
+
+## Crosstalk
+
+When two wires run close together, a switching signal on one (the aggressor) induces noise on the neighboring wire (the victim) through mutual capacitance.
+
+**Glitch:** the aggressor's switching couples a false pulse onto the victim net — if that net is something like RST, the glitch can trigger an accidental reset and wipe valid data.
+
+**Delta delay / skew:** crosstalk can also just add a small extra delay (Δ) to the victim net instead of a full glitch. In a clock tree, two paths designed to be equal for zero skew end up with skew = Δ once one path picks up coupling.
+
+**Solution — clock net shielding:** shield wires tied to VDD/GND run on both sides of the clock net, absorbing switching noise before it reaches the clock signal.
+
+---
+
+## Lab — Custom Cell Integration and STA with OpenSTA
+
+Checked `tracks.info` for the sky130_fd_sc_hd library to get the routing track pitch values needed for LEF port placement:
+
+![tracks.info - li1/met1-met5 track pitch values](images/33_day4.png)
+
+Used `help grid` to get the grid command syntax, then set the grid to match the track pitch:
+```tcl
+grid 0.46um 0.34um 0.23um 0.17um
+```
+
+![Magic grid set to track pitch, box command output](images/36_day4.png)
+![sky130_inv cell aligned to grid - A/Y ports on track intersections](images/35_day4.png)
+![sky130_inv full cell view on grid](images/34_day4.png)
+
+Generated the LEF file from the tkcon console:
+```tcl
+lef write
+```
+
+![lef write command - generating sky130_vsdinv.lef](images/37_day4.png)
+
+The resulting LEF defines the macro's boundary, site, and pin geometry:
+
+![sky130_vsdinv.lef contents - PIN A/Y/VPWR definitions](images/38_day4.png)
+![sky130_vsdinv.lef contents continued](images/40_sky4.png)
+
+Copied the newly generated LEF and the required `.lib` files into the `picorv32a` design's `src` directory:
+
+![src directory listing - sky130_vsdinv.lef and .lib files copied](images/39_day4.png)
+
+### Editing `config.tcl` to Include the Custom Cell
+
+```tcl
+set ::env(LIB_SYNTH)      "$::env(OPENLANE_ROOT)/designs/picorv32a/src/sky130_fd_sc_hd__typical.lib"
+set ::env(LIB_FASTEST)    "$::env(OPENLANE_ROOT)/designs/picorv32a/src/sky130_fd_sc_hd__fast.lib"
+set ::env(LIB_SLOWEST)    "$::env(OPENLANE_ROOT)/designs/picorv32a/src/sky130_fd_sc_hd__slow.lib"
+set ::env(LIB_TYPICAL)    "$::env(OPENLANE_ROOT)/designs/picorv32a/src/sky130_fd_sc_hd__typical.lib"
+set ::env(EXTRA_LEFS)     [glob $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME)/src/*.lef]
+```
+
+Kicked off the flow, which picked up and merged the custom LEF automatically:
+
+![OpenLane flow.tcl -interactive - merging sky130_vsdinv.lef, run_synthesis](images/41_day4.png)
+
+Checked the placement DEF in Magic to confirm the custom inverter sits properly abutted against the standard cells around it:
+![Internal connectivity layers - expand command view](images/42_day4.png)
+
+![Custom inverter abutted in placement DEF among standard cells](images/44_day4.jpeg)
+![Placement DEF - custom inverter cell instance with neighboring std cells](images/43_day4.jpeg)
+
+### Running OpenSTA (Pre-CTS Timing)
+
+Created `pre_sta.conf` in the OpenLane root, and `my_base.sdc` in `openlane/designs/picorv32a/src` (based on `openlane/scripts/base.sdc`), then ran:
+```tcl
+sta pre_sta.conf
+```
+
+### Running CTS
+
+```tcl
+run_cts
+```
+
+Dropped into the OpenROAD tool directly to build a custom timing report, reading the post-CTS netlist, liberty files, and the custom SDC:
+```tcl
+openroad
+read_lef /OpenLane/designs/picorv32a/runs/<run_tag>/tmp/merged.nom.lef
+read_def /OpenLane/designs/picorv32a/runs/<run_tag>/results/cts/picorv32a.def
+write_db pico_cts.db
+read_db pico_cts.db
+read_verilog /OpenLane/designs/picorv32a/runs/<run_tag>/results/synthesis/picorv32a.v
+read_liberty $::env(LIB_SYNTH_COMPLETE)
+link_design picorv32a
+read_sdc /OpenLane/designs/picorv32a/src/my_base.sdc
+set_propagated_clock [all_clocks]
+report_checks -path_delay min_max -fields {slew trans net cap input_pins} -format full_clock_expanded -digits 4
+```
+
