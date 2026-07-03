@@ -361,7 +361,6 @@ Inspected the cell: stacked PMOS/NMOS pair, VPWR/VGND rails, and A (input) / Y (
 ![description](images/13_inv3.png)
 ![description](images/14_inv4.png)
 ![description](images/15_inv5.png)
-![description](images/16_inv6.png)
 
 ## Extracting SPICE Netlist from Magic
 
@@ -373,7 +372,7 @@ ext2spice cthresh 0 rthresh 0
 ext2spice
 ```
 
-This produces `sky130_inv.spice` — a netlist built straight from the drawn layout geometry rather than hand-written. Edited the generated file to check the model include path and unit distances before simulating.
+![description](images/16_inv6.png)
 
 ![description](images/17_inv7.png)
 
@@ -387,7 +386,6 @@ plot y vs time a
 ```
 
 ![description](images/18_inv8.png)
-![description](images/19_inv9.png)
 ![description](images/20_inv10.png)
 ![description](images/21_inv11.png)
 ![description](images/22_inv11.png)
