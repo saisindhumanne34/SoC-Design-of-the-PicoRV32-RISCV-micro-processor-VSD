@@ -405,6 +405,10 @@ Reference: [Sky130 Periphery Rules](https://skywater-pdk.readthedocs.io/en/main/
 
 ![Sky130 PDK periphery rules documentation](images/23_sky1.png)
 
+**Met3:** worked through a similar labeled test grid (`m3.1`–`m3.6`) for the met3 layer, again split into correct-by-design, incorrect, and not-implemented examples.
+
+![met3 test structures - m3.1 to m3.6](images/24_sky2.png)
+
 **Poly rule (poly.9):** found a case where poly.9 was incorrectly implemented in the old sky130A tech file — spacing under 0.48µm wasn't flagging a DRC violation at all. Traced this to the rule definition in the tech file itself and corrected it so the spacing check actually fires.
 
 ![poly.9 rule - drc why output showing mrp1/poly.9 violations](images/27_sky5.png)
@@ -425,10 +429,6 @@ Fixed the geometry — follow-up `drc why` returned "No errors found."
 **Diffusion tap (difftap):** worked through `difftap.1`–`difftap.6`, comparing incorrect examples against corrected versions in the same layout.
 
 ![difftap.1 to difftap.6 - correct vs incorrect, DRC=10](images/32_sky10.png)
-
-**Met3:** worked through a similar labeled test grid (`m3.1`–`m3.6`) for the met3 layer, again split into correct-by-design, incorrect, and not-implemented examples.
-
-![met3 test structures - m3.1 to m3.6](images/24_sky2.png)
 
 **Poly / precision resistor:**
 ```tcl
