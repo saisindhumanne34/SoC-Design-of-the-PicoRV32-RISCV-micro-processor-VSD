@@ -394,10 +394,10 @@ Fall transition time = Time taken for output to fall to 20% − Time taken for o
 
 Propagation delay measured at the input/output 50% crossover, around **t ≈ 2.18 ns**.
 
-![Zoomed crossover - 2.56-2.72V range](images/22_inv11.png)
 ![Delay measurement values from ngspice cursor](images/19_inv9.png)
 ![Zoomed crossover - 665.4-667.4mV range](images/20_inv10.png)
 ![Zoomed crossover - 610-710mV range](images/21_inv11.png)
+![Zoomed crossover - 2.56-2.72V range](images/22_inv11.png)
 
 ## Magic DRC Lab
 
@@ -408,28 +408,15 @@ Reference: [Sky130 Periphery Rules](https://skywater-pdk.readthedocs.io/en/main/
 **Met3:** worked through a similar labeled test grid (`m3.1`–`m3.6`) for the met3 layer, again split into correct-by-design, incorrect, and not-implemented examples.
 
 ![met3 test structures - m3.1 to m3.6](images/24_sky2.png)
+Worked through `poly.1a`–`poly.16`, each labeled Correct by design / Incorrect / Not implemented.
+
+![poly.1a to poly.16 test structures](images/26_sky4.png)
 ![poly cell zoomed - ppolyres layer, DRC=22](images/25_sky3.png)
 
 **Poly rule (poly.9):** found a case where poly.9 was incorrectly implemented in the old sky130A tech file — spacing under 0.48µm wasn't flagging a DRC violation at all. Traced this to the rule definition in the tech file itself and corrected it so the spacing check actually fires.
 
 ![poly.9 rule - drc why output showing mrp1/poly.9 violations](images/27_sky5.png)
 
-**N-well:**
-```tcl
-% drc why
-N-well width < 0.84um (nwell.1)
-N-well spacing < 1.27um (nwell.2a)
-N-well overlap of Deep N-well < 0.4um outside, 1.03um inside (nwell.5a, 7)
-```
-Fixed the geometry — follow-up `drc why` returned "No errors found."
-
-![N-well - drc why output showing width/spacing/overlap violations](images/30_sky8.png)
-![N-well - incorrect implementation flagged, DRC=24](images/29_sky7.png)
-![N-well - polysilicon zoomed view, DRC=11](images/31_sky9.png)
-
-**Diffusion tap (difftap):** worked through `difftap.1`–`difftap.6`, comparing incorrect examples against corrected versions in the same layout.
-
-![difftap.1 to difftap.6 - correct vs incorrect, DRC=10](images/32_sky10.png)
 
 **Poly / precision resistor:**
 ```tcl
@@ -440,9 +427,7 @@ poly.resistor spacing to N-tap < 0.48um (poly.9)
 poly.spacing to Diffusion < 0.075um (poly.4a)
 P-tap spacing to field poly < 0.055um (poly.5)
 ```
-Worked through `poly.1a`–`poly.16`, each labeled Correct by design / Incorrect / Not implemented.
 
-![poly.1a to poly.16 test structures](images/26_sky4.png)
 ![poly.7-poly.11 structures with xhrpoly/uhrpoly drc why output](images/28_sky6.png)
 
 # Day 4 — Pre-Layout Timing Analysis and Clock Tree Synthesis
@@ -532,7 +517,6 @@ lef write
 The resulting LEF defines the macro's boundary, site, and pin geometry:
 
 ![sky130_vsdinv.lef contents - PIN A/Y/VPWR definitions](images/38_day4.png)
-![sky130_vsdinv.lef contents continued](images/40_sky4.png)
 
 Copied the newly generated LEF and the required `.lib` files into the `picorv32a` design's `src` directory:
 
@@ -547,10 +531,8 @@ set ::env(LIB_SLOWEST)    "$::env(OPENLANE_ROOT)/designs/picorv32a/src/sky130_fd
 set ::env(LIB_TYPICAL)    "$::env(OPENLANE_ROOT)/designs/picorv32a/src/sky130_fd_sc_hd__typical.lib"
 set ::env(EXTRA_LEFS)     [glob $::env(OPENLANE_ROOT)/designs/$::env(DESIGN_NAME)/src/*.lef]
 ```
+![sky130_vsdinv.lef contents continued](images/40_sky4.png)
 
-Kicked off the flow, which picked up and merged the custom LEF automatically:
-
-![OpenLane flow.tcl -interactive - merging sky130_vsdinv.lef, run_synthesis](images/41_day4.png)
 
 Checked the placement DEF in Magic to confirm the custom inverter sits properly abutted against the standard cells around it:
 ![Internal connectivity layers - expand command view](images/42_day4.png)
