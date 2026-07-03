@@ -361,6 +361,7 @@ Inspected the cell: stacked PMOS/NMOS pair, VPWR/VGND rails, and A (input) / Y (
 ![description](images/13_inv3.png)
 ![description](images/14_inv4.png)
 ![description](images/15_inv5.png)
+![description](images/16_inv6.png)
 
 ## Extracting SPICE Netlist from Magic
 
@@ -374,7 +375,7 @@ ext2spice
 
 This produces `sky130_inv.spice` — a netlist built straight from the drawn layout geometry rather than hand-written. Edited the generated file to check the model include path and unit distances before simulating.
 
-![sky130_inv layout in Magic](images/day3/inv_layout.png)
+![description](images/17_inv7.png)
 
 ## Running ngspice Simulation
 
@@ -385,8 +386,21 @@ ngspice sky130_inv.spice
 plot y vs time a
 ```
 
-![ngspice transient waveform - output vs input](images/day3/ngspice_waveform.png)
-
+![description](images/18_inv8.png)
+![description](images/19_inv9.png)
+![description](images/20_inv10.png)
+![description](images/21_inv11.png)
+![description](images/22_inv11.png)
+![description](images/23_sky1.png)
+![description](images/24_sky2.png)
+![description](images/25_sky3.png)
+![description](images/26_sky4.png)
+![description](images/27_sky5.png)
+![description](images/28_sky6.png)
+![description](images/29_sky7.png)
+![description](images/30_sky8.png)
+![description](images/31_sky9.png)
+![description](images/32_sky10.png)
 From the waveform, measured rise time, fall time, and propagation delay:
 
 **Rise transition time** = time to reach 80% − time to reach 20%
