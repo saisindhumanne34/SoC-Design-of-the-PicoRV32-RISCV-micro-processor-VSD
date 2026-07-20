@@ -557,6 +557,8 @@ sta pre_sta.conf
 run_cts
 ```
 ![OpenLane flow.tcl -interactive - merging sky130_vsdinv.lef, run_synthesis](images/48_day4.png)
+![Top-level I/O pin placement with standard cell rows](images/50_day5.png)
+
 
 Dropped into the OpenROAD tool directly to build a custom timing report, reading the post-CTS netlist, liberty files, and the custom SDC:
 ```tcl
@@ -624,7 +626,6 @@ run_routing
 Full routed die view after PDN generation and routing:
 
 ![Full routed chip - PDN and routing overview](images/49_day5.png)
-![Top-level I/O pin placement with standard cell rows](images/50_day5.png)
 
 Zoomed view of top-level I/O pins (`pcpi_rd`, `irq`, `trap`, `pcpi_cs`, `mem_rdata`, `mem_la_wdata`) landing at the chip boundary, with standard cell rows and filler cells visible below:
 
