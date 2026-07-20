@@ -624,14 +624,15 @@ run_routing
 Full routed die view after PDN generation and routing:
 
 ![Full routed chip - PDN and routing overview](images/49_day5.png)
+![Top-level I/O pin placement with standard cell rows](images/50_day5.png)
 
 Zoomed view of top-level I/O pins (`pcpi_rd`, `irq`, `trap`, `pcpi_cs`, `mem_rdata`, `mem_la_wdata`) landing at the chip boundary, with standard cell rows and filler cells visible below:
 
-![Top-level I/O pin placement with standard cell rows](images/51_day5.png)
+![Top-level I/O pin placement with standard cell rows](images/52_day5.png)
 
 Zoomed view of a standard cell row showing fillers, decap cells, and antenna diode cells (labeled `ANTENNA`) threaded in among the logic cells:
 
-![Standard cell row - fillers, decaps, and antenna cells](images/50_day5.png)
+![Standard cell row - fillers, decaps, and antenna cells](images/51_day5.png)
 
 
 
